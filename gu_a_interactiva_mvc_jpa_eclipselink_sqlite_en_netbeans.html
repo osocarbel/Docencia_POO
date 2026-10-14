@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Clase: CRUD Java Swing + JPA (EclipseLink) + SQLite en NetBeans</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        netbeans: {
+                            blue: '#1b6ac6',
+                            dark: '#0f172a',
+                            accent: '#38bdf8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for code blocks */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .swing-window {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-sky-500 selection:text-white">
+
+    <!-- Toast Notification (Replaces alert) -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 hidden transform transition-all duration-300 translate-y-2 opacity-0">
+        <div class="bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-emerald-400/30">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-xl"></i>
+            <span id="toast-message" class="font-medium text-sm">Código copiado al portapapeles</span>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal for Swing Simulator -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-100 text-slate-900 rounded-lg max-w-md w-full overflow-hidden shadow-2xl border-2 border-slate-400">
+            <div class="bg-gradient-to-r from-slate-200 to-slate-300 px-4 py-2 border-b border-slate-400 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-brands fa-java text-blue-700 font-bold"></i>
+                    <span class="text-xs font-bold text-slate-800">Confirmar Eliminación (JOptionPane)</span>
+                </div>
+                <button onclick="closeConfirmModal()" class="text-slate-600 hover:text-red-600 font-bold text-sm px-1">✕</button>
+            </div>
+            <div class="p-6 flex items-start space-x-4">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 text-3xl mt-1"></i>
+                <div>
+                    <p id="confirm-modal-text" class="text-sm font-medium text-slate-800">¿Está seguro de eliminar este registro?</p>
+                    <p class="text-xs text-slate-500 mt-1">Esta acción invocará a <code class="font-mono bg-slate-200 px-1 rounded">jpaController.destroy(id)</code>.</p>
+                </div>
+            </div>
+            <div class="bg-slate-200 px-4 py-3 flex justify-end space-x-3 border-t border-slate-300">
+                <button id="confirm-yes-btn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded shadow">Sí (YES_OPTION)</button>
+                <button onclick="closeConfirmModal()" class="bg-slate-300 hover:bg-slate-400 text-slate-800 text-xs font-semibold px-4 py-2 rounded border border-slate-400">No (NO_OPTION)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                    <i class="fa-brands fa-java text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg tracking-tight text-white leading-none">Aula POO: Java MVC + JPA</h1>
+                    <p class="text-xs text-sky-400 font-mono mt-0.5">NetBeans (Ant) • EclipseLink • SQLite (bd_personas.db)</p>
+                </div>
+            </div>
+            <nav class="hidden md:flex items-center space-x-1 text-sm font-medium">
+                <a href="#arquitectura" class="px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition">1. Arquitectura</a>
+                <a href="#paso-a-paso" class="px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition">2. Importancia de cada Paso</a>
+                <a href="#explorador-codigo" class="px-3 py-2 rounded-lg text-sky-400 bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/20 transition"><i class="fa-solid fa-code mr-1.5"></i>3. Archivos del Proyecto (7)</a>
+                <a href="#simulador" class="px-3 py-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition"><i class="fa-solid fa-desktop mr-1.5"></i>4. Simulador Swing</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden py-12 sm:py-16 border-b border-slate-800/80 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <div class="lg:col-span-7 space-y-5">
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+                        <span>Guía Docente Paso a Paso • Programación Orientada a Objetos</span>
+                    </div>
+                    <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+                        CRUD con <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">JPA (EclipseLink)</span>, SQLite y Patrón MVC en Swing
+                    </h2>
+                    <p class="text-slate-300 text-base sm:text-lg leading-relaxed">
+                        Esta plataforma interactiva documenta la solución completa para conectar el archivo <code class="font-mono text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">bd_personas.db</code> en un proyecto <strong>Java with Ant</strong> en Apache NetBeans, utilizando los asistentes de la categoría <strong>Persistence</strong> y explicando el <em>porqué pedagógico y técnico</em> de cada decisión.
+                    </p>
+                    <div class="flex flex-wrap gap-3 pt-2">
+                        <a href="#explorador-codigo" class="px-5 py-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm shadow-lg shadow-sky-500/20 transition flex items-center space-x-2">
+                            <i class="fa-solid fa-folder-tree"></i>
+                            <span>Ver Todos los Archivos del Proyecto</span>
+                        </a>
+                        <a href="#paso-a-paso" class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm border border-slate-700 transition flex items-center space-x-2">
+                            <i class="fa-solid fa-graduation-cap text-sky-400"></i>
+                            <span>Explorar Explicación Paso a Paso</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Database Inspection Card -->
+                <div class="lg:col-span-5">
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-2xl relative">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                            <div class="flex items-center space-x-2.5">
+                                <i class="fa-solid fa-database text-amber-400 text-lg"></i>
+                                <div>
+                                    <h3 class="text-sm font-bold text-white">Inspección del Insumo: <code class="font-mono text-amber-300">bd_personas.db</code></h3>
+                                    <p class="text-xs text-slate-400">SQLite format 3 • 45 registros precargados</p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-md">Verificado</span>
+                        </div>
+                        <div class="bg-slate-950 rounded-xl p-3.5 font-mono text-xs text-slate-300 border border-slate-800/80 overflow-x-auto">
+<pre class="leading-relaxed"><span class="text-pink-400">CREATE TABLE</span> <span class="text-sky-300">Persona</span> (
+    <span class="text-amber-300">id</span> INTEGER,
+    <span class="text-amber-300">nombres</span> TEXT,
+    <span class="text-amber-300">correo</span> TEXT,
+    <span class="text-amber-300">telefono</span> TEXT,
+    <span class="text-pink-400">CONSTRAINT</span> pK_1 <span class="text-pink-400">PRIMARY KEY</span>(id <span class="text-emerald-400">AUTOINCREMENT</span>)
+);</pre>
+                        </div>
+                        <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-slate-800/60 rounded-lg p-2.5 border border-slate-700/50">
+                                <span class="block text-xs text-slate-400">Motor ORM</span>
+                                <span class="font-bold text-sm text-sky-400">EclipseLink 2.1</span>
+                            </div>
+                            <div class="bg-slate-800/60 rounded-lg p-2.5 border border-slate-700/50">
+                                <span class="block text-xs text-slate-400">Construcción</span>
+                                <span class="font-bold text-sm text-amber-400">Java with Ant</span>
+                            </div>
+                            <div class="bg-slate-800/60 rounded-lg p-2.5 border border-slate-700/50">
+                                <span class="block text-xs text-slate-400">Interfaz GUI</span>
+                                <span class="font-bold text-sm text-emerald-400">Java Swing</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 1: Arquitectura MVC + JPA -->
+    <section id="arquitectura" class="py-12 border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <div class="max-w-3xl">
+                <span class="text-xs font-bold uppercase tracking-wider text-sky-400">1. Visión Arquitectónica</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">¿Cómo interactúan MVC, JPA (EclipseLink) y SQLite?</h2>
+                <p class="text-slate-400 text-sm sm:text-base mt-2">
+                    Uno de los errores más frecuentes de los estudiantes al usar NetBeans es programar consultas SQL o instanciar el controlador JPA directamente dentro del botón de comando del <code class="font-mono text-slate-200">JFrame</code>. Nuestra arquitectura desacopla completamente las responsabilidades en <strong>5 paquetes</strong>:
+                </p>
+            </div>
+
+            <!-- Interactive Architecture Flow -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <!-- Paso 1: Principal -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between hover:border-purple-500/50 transition">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-mono px-2.5 py-1 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">paquete: principal</span>
+                            <i class="fa-solid fa-power-off text-purple-400"></i>
+                        </div>
+                        <h3 class="font-bold text-white text-base">1. Main.java</h3>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                            Punto de entrada. Aplica el <em>Look & Feel</em> nativo, instancia la Vista, el Controlador JPA y los inyecta en el Controlador MVC.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-purple-300">
+                        Ensambla las piezas →
+                    </div>
+                </div>
+
+                <!-- Paso 2: Vista -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between hover:border-emerald-500/50 transition">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-mono px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">paquete: vista</span>
+                            <i class="fa-solid fa-window-maximize text-emerald-400"></i>
+                        </div>
+                        <h3 class="font-bold text-white text-base">2. FrmPersona.java</h3>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                            Interfaz gráfica en <strong>Swing</strong> (<code class="font-mono">JFrame</code>, <code class="font-mono">JTable</code>, <code class="font-mono">JButton</code>). Es 100% pasiva: no sabe que existe SQLite ni JPA.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-emerald-300">
+                        Dispara eventos UI ↔
+                    </div>
+                </div>
+
+                <!-- Paso 3: Controlador MVC -->
+                <div class="bg-slate-900 border-2 border-sky-500/40 rounded-2xl p-5 flex flex-col justify-between shadow-lg shadow-sky-500/5">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-mono px-2.5 py-1 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">paquete: controlador</span>
+                            <i class="fa-solid fa-gears text-sky-400"></i>
+                        </div>
+                        <h3 class="font-bold text-white text-base">3. ControladorPersona</h3>
+                        <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                            Cerebro MVC (<code class="font-mono">ActionListener</code>). Valida campos, empaqueta datos en objetos <code class="font-mono">Persona</code> y llama a la capa de persistencia.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-sky-300">
+                        Coordina Vista y Datos ↔
+                    </div>
+                </div>
+
+                <!-- Paso 4: Persistencia JPA -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between hover:border-amber-500/50 transition">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-mono px-2.5 py-1 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">paquete: persistencia</span>
+                            <i class="fa-solid fa-database text-amber-400"></i>
+                        </div>
+                        <h3 class="font-bold text-white text-base">4. PersonaJpaController</h3>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                            Generado por NetBeans. Administra el <code class="font-mono">EntityManager</code> de <strong>EclipseLink</strong> y ejecuta transacciones CRUD sin escribir SQL manual.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-amber-300">
+                        Persiste Entidades ↔
+                    </div>
+                </div>
+
+                <!-- Paso 5: Modelo + Unidad Persistencia -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between hover:border-rose-500/50 transition">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-mono px-2.5 py-1 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">paquete: modelo</span>
+                            <i class="fa-solid fa-cube text-rose-400"></i>
+                        </div>
+                        <h3 class="font-bold text-white text-base">5. Persona.java + XML</h3>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                            Entidad ORM mapeada con <code class="font-mono">@Entity</code> y <code class="font-mono">@Id</code> a la tabla de <code class="font-mono">bd_personas.db</code> mediante <code class="font-mono">persistence.xml</code>.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-rose-300">
+                        Mapeo Objeto-Relacional
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: Explicación Paso a Paso y su Importancia -->
+    <section id="paso-a-paso" class="py-14 border-b border-slate-800/80 bg-slate-900/30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-sky-400">2. Metodología y Justificación Técnica</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Guía Paso a Paso en NetBeans (Java with Ant) y su Importancia</h2>
+                    <p class="text-slate-400 text-sm sm:text-base mt-2 max-w-3xl">
+                        Cada etapa del laboratorio cumple un rol indispensable. A continuación se detallan las instrucciones exactas en el IDE y el <strong>fundamento pedagógico</strong> de por qué no puede omitirse ningún paso.
+                    </p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-300 flex items-center space-x-3 shrink-0">
+                    <i class="fa-regular fa-clock text-sky-400 text-base"></i>
+                    <div>
+                        <span class="block font-bold text-white">Duración de la Sesión</span>
+                        <span>3 a 4 horas (Laboratorio práctico)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- PASO 1 -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded-lg bg-sky-500/10 text-sky-400 font-mono text-xs font-bold border border-sky-500/20">PASO 1 • Proyecto Ant y Ubicación de SQLite</span>
+                            <span class="text-xs text-slate-400">20 min</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Creación del Proyecto <code class="font-mono text-sky-300">Java with Ant</code> y Estructura de Paquetes</h3>
+                        <ol class="text-sm text-slate-300 space-y-2 list-decimal list-inside">
+                            <li>En Apache NetBeans ir a <strong>File &gt; New Project... &gt; Java with Ant &gt; Java Application</strong>.</li>
+                            <li>Nombrar el proyecto <code class="font-mono text-amber-300">GestionPersonasMVC</code> (desmarcar <em>Create Main Class</em>).</li>
+                            <li>Copiar el archivo <code class="font-mono text-amber-300">bd_personas.db</code> en la <strong>raíz del proyecto</strong> (junto a <code class="font-mono">build.xml</code> y <code class="font-mono">src</code>).</li>
+                            <li>Crear los 5 paquetes: <code class="font-mono">modelo</code>, <code class="font-mono">persistencia</code>, <code class="font-mono">vista</code>, <code class="font-mono">controlador</code> y <code class="font-mono">principal</code>.</li>
+                        </ol>
+                    </div>
+                    <div class="bg-sky-950/40 border border-sky-500/30 rounded-xl p-4">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-sky-300 flex items-center gap-2">
+                            <i class="fa-solid fa-lightbulb"></i> ¿Por qué es importante este paso?
+                        </h4>
+                        <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                            En proyectos <strong>Java with Ant</strong>, el directorio de trabajo por defecto al ejecutar la aplicación es la carpeta raíz del proyecto. Colocar <code class="font-mono">bd_personas.db</code> allí permite usar una ruta relativa (<code class="font-mono">jdbc:sqlite:bd_personas.db</code>) evitando que el programa falle cuando el estudiante lleve el proyecto de la universidad a su casa. Además, crear los paquetes antes de codificar obliga mentalmente al alumno a respetar la separación de capas MVC.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- PASO 2 -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded-lg bg-amber-500/10 text-amber-400 font-mono text-xs font-bold border border-amber-500/20">PASO 2 • Pestaña Services y Librerías Ant</span>
+                            <span class="text-xs text-slate-400">20 min</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Conexión JDBC en NetBeans y Biblioteca EclipseLink</h3>
+                        <ol class="text-sm text-slate-300 space-y-2 list-decimal list-inside">
+                            <li>En la pestaña <strong>Services (Ctrl+5) &gt; Databases &gt; Drivers</strong>, clic derecho en <strong>New Driver...</strong> y agregar <code class="font-mono text-amber-300">sqlite-jdbc-3.45.1.0.jar</code> (<code class="font-mono">org.sqlite.JDBC</code>).</li>
+                            <li>Clic derecho en el driver SQLite &gt; <strong>Connect Using...</strong> e ingresar <code class="font-mono text-xs">jdbc:sqlite:C:/ruta/a/GestionPersonasMVC/bd_personas.db</code>.</li>
+                            <li>En la pestaña <strong>Projects &gt; Libraries</strong>, agregar el JAR de <code class="font-mono">sqlite-jdbc</code> y la librería <strong>EclipseLink (JPA 2.1)</strong> incluida en NetBeans.</li>
+                        </ol>
+                    </div>
+                    <div class="bg-amber-950/40 border border-amber-500/30 rounded-xl p-4">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-2">
+                            <i class="fa-solid fa-lightbulb"></i> ¿Por qué es importante este paso?
+                        </h4>
+                        <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                            Los asistentes de la categoría <strong>Persistence</strong> de NetBeans realizan <em>ingeniería inversa</em> leyendo los metadatos en vivo desde la pestaña <strong>Services</strong>. Si no se registra primero la conexión en el IDE, el asistente de entidades estará vacío. A su vez, como usamos <strong>Ant</strong> (y no Maven), debemos agregar manualmente tanto el driver JDBC como la librería <strong>EclipseLink (JPA 2.1)</strong> a la carpeta <code class="font-mono">Libraries</code> del proyecto para evitar <code class="font-mono">ClassNotFoundException</code> en tiempo de ejecución.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- PASO 3 -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded-lg bg-rose-500/10 text-rose-400 font-mono text-xs font-bold border border-rose-500/20">PASO 3 • Categoría Persistence (Entidad + XML)</span>
+                            <span class="text-xs text-slate-400">25 min</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white"><code class="font-mono text-rose-300">Entity Classes from Database</code> y Ajuste de SQLite</h3>
+                        <ol class="text-sm text-slate-300 space-y-2 list-decimal list-inside">
+                            <li>Clic derecho en el proyecto &gt; <strong>New &gt; Other... &gt; Persistence &gt; Entity Classes from Database</strong>.</li>
+                            <li>Seleccionar la conexión a <code class="font-mono">bd_personas.db</code> y elegir la tabla <code class="font-mono text-emerald-300">Persona</code> (ignorar <code class="font-mono">sqlite_sequence</code>).</li>
+                            <li>Ubicar en el paquete <code class="font-mono">modelo</code> y crear la Unidad de Persistencia <code class="font-mono text-amber-300">GestionPersonasMVCPU</code> con proveedor <strong>EclipseLink</strong> y estrategia <em>None</em>.</li>
+                            <li><strong>Ajuste Crítico:</strong> Verificar en <code class="font-mono">Persona.java</code> la anotación <code class="font-mono text-emerald-300">@GeneratedValue(strategy = GenerationType.IDENTITY)</code> sobre el atributo <code class="font-mono">id</code>.</li>
+                        </ol>
+                    </div>
+                    <div class="bg-rose-950/40 border border-rose-500/30 rounded-xl p-4">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-rose-300 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i> ¿Por qué es crítico el ajuste de @GeneratedValue en SQLite?
+                        </h4>
+                        <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                            El driver JDBC de SQLite no siempre reporta a NetBeans que la columna <code class="font-mono">id INTEGER PRIMARY KEY AUTOINCREMENT</code> es autogenerada. Si se deja sin <code class="font-mono">GenerationType.IDENTITY</code>, EclipseLink exigirá un ID manual o intentará usar una tabla secuenciadora inexistente. Con <code class="font-mono">IDENTITY</code>, SQLite asigna el ID automáticamente al insertar.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- PASO 4 -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded-lg bg-purple-500/10 text-purple-400 font-mono text-xs font-bold border border-purple-500/20">PASO 4 • Categoría Persistence (JPA Controller)</span>
+                            <span class="text-xs text-slate-400">20 min</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white"><code class="font-mono text-purple-300">JPA Controller Classes from Entity Classes</code></h3>
+                        <ol class="text-sm text-slate-300 space-y-2 list-decimal list-inside">
+                            <li>Clic derecho en el proyecto &gt; <strong>New &gt; Other... &gt; Persistence &gt; JPA Controller Classes from Entity Classes</strong>.</li>
+                            <li>Seleccionar <code class="font-mono">modelo.Persona</code> y definir el paquete destino <code class="font-mono">persistencia</code>.</li>
+                            <li>NetBeans creará <code class="font-mono">PersonaJpaController.java</code> y el paquete <code class="font-mono">persistencia.exceptions</code>.</li>
+                            <li>Agregar un constructor vacío que inicialice <code class="font-mono">Persistence.createEntityManagerFactory("GestionPersonasMVCPU")</code>.</li>
+                        </ol>
+                    </div>
+                    <div class="bg-purple-950/40 border border-purple-500/30 rounded-xl p-4">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-purple-300 flex items-center gap-2">
+                            <i class="fa-solid fa-lightbulb"></i> ¿Por qué es importante este paso?
+                        </h4>
+                        <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                            Aprovechar las herramientas CASE de NetBeans ahorra cientos de líneas de código repetitivo y propenso a fugas de memoria. El <code class="font-mono">PersonaJpaController</code> abre y cierra el <code class="font-mono">EntityManager</code> en bloques <code class="font-mono">try / finally</code> seguros para cada operación (<code class="font-mono">create</code>, <code class="font-mono">edit</code>, <code class="font-mono">destroy</code>, <code class="font-mono">findPersonaEntities</code>).
+                        </p>
+                    </div>
+                </div>
+
+                <!-- PASO 5 -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-mono text-xs font-bold border border-emerald-500/20">PASO 5 • Capa Vista Swing Desacoplada</span>
+                            <span class="text-xs text-slate-400">30 min</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Diseño del Formulario <code class="font-mono text-emerald-300">FrmPersona.java</code></h3>
+                        <ol class="text-sm text-slate-300 space-y-2 list-decimal list-inside">
+                            <li>Crear en el paquete <code class="font-mono">vista</code> el formulario Swing con 4 campos (<code class="font-mono">txtId</code> bloqueado, <code class="font-mono">txtNombres</code>, <code class="font-mono">txtCorreo</code>, <code class="font-mono">txtTelefono</code>).</li>
+                            <li>Incluir los 4 botones de comando (<code class="font-mono">btnGuardar</code>, <code class="font-mono">btnActualizar</code>, <code class="font-mono">btnEliminar</code>, <code class="font-mono">btnLimpiar</code>) y el <code class="font-mono">JTable</code> con su <code class="font-mono">DefaultTableModel</code>.</li>
+                            <li>Declarar los controles interactivos como <code class="font-mono">public</code> (o con métodos <em>getter</em>) sin agregar <code class="font-mono">ActionListeners</code> internos.</li>
+                        </ol>
+                    </div>
+                    <div class="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-4">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-2">
+                            <i class="fa-solid fa-lightbulb"></i> ¿Por qué es importante este paso?
+                        </h4>
+                        <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                            Para cumplir estrictamente el patrón <strong>MVC</strong>, la clase <code class="font-mono">FrmPersona</code> no debe importar nada del paquete <code class="font-mono">persistencia</code>. Si mañana cambiamos la interfaz Swing por una consola o JavaFX, el modelo y la persistencia permanecen intactos.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- PASO 6 -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 font-mono text-xs font-bold border border-indigo-500/20">PASO 6 • Controlador MVC e Inyección en Main</span>
+                            <span class="text-xs text-slate-400">45 min</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Orquestación de Eventos en <code class="font-mono text-indigo-300">ControladorPersona.java</code></h3>
+                        <ol class="text-sm text-slate-300 space-y-2 list-decimal list-inside">
+                            <li>Implementar <code class="font-mono">ActionListener</code> para escuchar los 4 botones de la vista y <code class="font-mono">MouseAdapter</code> para detectar clics sobre las filas de la tabla.</li>
+                            <li>Invocar <code class="font-mono">listarPersonas()</code> en el constructor para cargar inmediatamente los 45 registros de <code class="font-mono">bd_personas.db</code>.</li>
+                            <li>En <code class="font-mono">Main.java</code>, usar <code class="font-mono">SwingUtilities.invokeLater()</code> para lanzar la ventana en el hilo seguro de despacho de eventos (EDT).</li>
+                        </ol>
+                    </div>
+                    <div class="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-4">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-2">
+                            <i class="fa-solid fa-lightbulb"></i> ¿Por qué es importante este paso?
+                        </h4>
+                        <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                            El controlador centraliza las validaciones de negocio (campos vacíos, selección de fila en la tabla antes de editar/borrar) y traduce las excepciones técnicas de JPA (<code class="font-mono">NonexistentEntityException</code>) en mensajes amigables para el usuario final.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: Explorador de Todos los Archivos del Proyecto -->
+    <section id="explorador-codigo" class="py-14 border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-sky-400">3. Repositorio Completo del Proyecto</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Contenido Íntegro de Todos los Archivos Necesarios</h2>
+                    <p class="text-slate-400 text-sm sm:text-base mt-1">
+                        Haz clic en cualquier archivo del árbol del proyecto <strong>NetBeans (Ant)</strong> a la izquierda para inspeccionar su rol técnico y copiar su código fuente completo.
+                    </p>
+                </div>
+                <button onclick="copyCurrentFile()" class="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs sm:text-sm transition flex items-center space-x-2 shadow-lg shadow-sky-500/20">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copiar Archivo Seleccionado</span>
+                </button>
+            </div>
+
+            <!-- IDE Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                <!-- Left Sidebar: NetBeans Project Tree -->
+                <div class="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-slate-800 bg-slate-950/60 p-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2 px-2 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-3">
+                            <i class="fa-solid fa-cubes text-sky-400"></i>
+                            <span>Projects • GestionPersonasMVC (Ant)</span>
+                        </div>
+
+                        <div class="mt-3 space-y-1 text-xs font-mono" id="file-tree">
+                            <!-- Root DB Info -->
+                            <div class="px-2 py-1 text-slate-400 flex items-center space-x-2">
+                                <i class="fa-solid fa-folder-open text-amber-400"></i>
+                                <span class="font-semibold text-slate-200">Source Packages (src/)</span>
+                            </div>
+
+                            <!-- META-INF -->
+                            <div class="pl-4 space-y-1">
+                                <div class="text-slate-400 px-2 py-1 flex items-center space-x-2">
+                                    <i class="fa-solid fa-box-archive text-amber-500/80"></i>
+                                    <span>META-INF</span>
+                                </div>
+                                <button onclick="selectFile('persistence.xml')" id="btn-file-persistence.xml" class="file-btn w-full text-left pl-6 pr-3 py-2 rounded-lg flex items-center justify-between transition">
+                                    <span class="flex items-center space-x-2">
+                                        <i class="fa-solid fa-file-code text-orange-400"></i>
+                                        <span>persistence.xml</span>
+                                    </span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">XML</span>
+                                </button>
+
+                                <!-- Paquete modelo -->
+                                <div class="text-slate-400 px-2 py-1 pt-2 flex items-center space-x-2">
+                                    <i class="fa-solid fa-box text-amber-500/80"></i>
+                                    <span>modelo</span>
+                                </div>
+                                <button onclick="selectFile('Persona.java')" id="btn-file-Persona.java" class="file-btn w-full text-left pl-6 pr-3 py-2 rounded-lg flex items-center justify-between transition">
+                                    <span class="flex items-center space-x-2">
+                                        <i class="fa-brands fa-java text-rose-400"></i>
+                                        <span>Persona.java</span>
+                                    </span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-300">@Entity</span>
+                                </button>
+
+                                <!-- Paquete persistencia -->
+                                <div class="text-slate-400 px-2 py-1 pt-2 flex items-center space-x-2">
+                                    <i class="fa-solid fa-box text-amber-500/80"></i>
+                                    <span>persistencia</span>
+                                </div>
+                                <button onclick="selectFile('PersonaJpaController.java')" id="btn-file-PersonaJpaController.java" class="file-btn w-full text-left pl-6 pr-3 py-2 rounded-lg flex items-center justify-between transition">
+                                    <span class="flex items-center space-x-2">
+                                        <i class="fa-brands fa-java text-amber-400"></i>
+                                        <span>PersonaJpaController.java</span>
+                                    </span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300">JPA CRUD</span>
+                                </button>
+
+                                <!-- Paquete persistencia.exceptions -->
+                                <div class="text-slate-400 px-2 py-1 pt-2 flex items-center space-x-2">
+                                    <i class="fa-solid fa-box text-amber-500/80"></i>
+                                    <span>persistencia.exceptions</span>
+                                </div>
+                                <button onclick="selectFile('NonexistentEntityException.java')" id="btn-file-NonexistentEntityException.java" class="file-btn w-full text-left pl-6 pr-3 py-2 rounded-lg flex items-center justify-between transition">
+                                    <span class="flex items-center space-x-2">
+                                        <i class="fa-brands fa-java text-slate-400"></i>
+                                        <span class="truncate">NonexistentEntityException.java</span>
+                                    </span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">Excepción</span>
+                                </button>
+
+                                <!-- Paquete vista -->
+                                <div class="text-slate-400 px-2 py-1 pt-2 flex items-center space-x-2">
+                                    <i class="fa-solid fa-box text-amber-500/80"></i>
+                                    <span>vista</span>
+                                </div>
+                                <button onclick="selectFile('FrmPersona.java')" id="btn-file-FrmPersona.java" class="file-btn w-full text-left pl-6 pr-3 py-2 rounded-lg flex items-center justify-between transition">
+                                    <span class="flex items-center space-x-2">
+                                        <i class="fa-brands fa-java text-emerald-400"></i>
+                                        <span>FrmPersona.java</span>
+                                    </span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300">JFrame</span>
+                                </button>
+
+                                <!-- Paquete controlador -->
+                                <div class="text-slate-400 px-2 py-1 pt-2 flex items-center space-x-2">
+                                    <i class="fa-solid fa-box text-amber-500/80"></i>
+                                    <span>controlador</span>
+                                </div>
+                                <button onclick="selectFile('ControladorPersona.java')" id="btn-file-ControladorPersona.java" class="file-btn w-full text-left pl-6 pr-3 py-2 rounded-lg flex items-center justify-between transition">
+                                    <span class="flex items-center space-x-2">
+                                        <i class="fa-brands fa-java text-sky-400"></i>
+                                        <span>ControladorPersona.java</span>
+                                    </span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300">MVC</span>
+                                </button>
+
+                                <!-- Paquete principal -->
+                                <div class="text-slate-400 px-2 py-1 pt-2 flex items-center space-x-2">
+                                    <i class="fa-solid fa-box text-amber-500/80"></i>
+                                    <span>principal</span>
+                                </div>
+                                <button onclick="selectFile('Main.java')" id="btn-file-Main.java" class="file-btn w-full text-left pl-6 pr-3 py-2 rounded-lg flex items-center justify-between transition">
+                                    <span class="flex items-center space-x-2">
+                                        <i class="fa-brands fa-java text-purple-400"></i>
+                                        <span>Main.java</span>
+                                    </span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300">Main</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Libraries & DB Root Info -->
+                    <div class="mt-6 pt-4 border-t border-slate-800 space-y-2 text-xs">
+                        <div class="text-slate-400 font-semibold px-2">Archivos y Librerías en Raíz Ant:</div>
+                        <div class="flex items-center space-x-2 px-2 py-1 bg-slate-900 rounded border border-slate-800 text-amber-300 font-mono">
+                            <i class="fa-solid fa-database"></i>
+                            <span>bd_personas.db (Raíz del proyecto)</span>
+                        </div>
+                        <div class="flex items-center space-x-2 px-2 py-1 bg-slate-900 rounded border border-slate-800 text-sky-300 font-mono">
+                            <i class="fa-solid fa-book"></i>
+                            <span>EclipseLink (JPA 2.1) + sqlite-jdbc.jar</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Content: Active File Explanation & Code -->
+                <div class="lg:col-span-8 flex flex-col">
+                    <!-- File Header & Pedagogical Note -->
+                    <div class="p-5 bg-slate-900 border-b border-slate-800 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center space-x-2.5">
+                                <span id="active-file-badge" class="px-2.5 py-1 rounded text-xs font-mono font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">src/modelo/Persona.java</span>
+                                <span id="active-file-origin" class="text-xs text-slate-400">Generado con asistente Persistence</span>
+                            </div>
+                            <button onclick="copyCurrentFile()" class="text-xs font-mono text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+                                <i class="fa-regular fa-clipboard mr-1"></i> Copiar código
+                            </button>
+                        </div>
+                        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-graduation-cap"></i> Importancia de este archivo en el proyecto:
+                            </h4>
+                            <p id="active-file-explanation" class="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed"></p>
+                        </div>
+                    </div>
+
+                    <!-- Source Code Viewer -->
+                    <div class="relative flex-1 bg-slate-950 p-5 overflow-x-auto max-h-[600px] overflow-y-auto">
+                        <pre class="font-mono text-xs sm:text-[13px] leading-relaxed text-slate-200"><code id="active-file-code"></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 4: Simulador en Vivo del Resultado Final (Swing + bd_personas.db) -->
+    <section id="simulador" class="py-14 border-b border-slate-800/80 bg-gradient-to-b from-slate-950 to-slate-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">4. Demostración Interactiva para el Aula</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Simulador en Vivo de <code class="font-mono text-emerald-300">FrmPersona</code> + <code class="font-mono text-amber-300">bd_personas.db</code></h2>
+                    <p class="text-slate-400 text-sm sm:text-base mt-1 max-w-3xl">
+                        Prueba exactamente cómo se comporta la ventana Swing al ejecutar <code class="font-mono text-slate-200">Main.java</code>. La tabla está precargada con los registros reales extraídos de tu archivo <code class="font-mono text-amber-300">bd_personas.db</code> (correos <code class="font-mono">@Floresta.edu.co</code>, <code class="font-mono">@gmail.com</code> y <code class="font-mono">@hotmail.com</code>). ¡Haz clic en una fila, crea, actualiza o elimina registros y observa la traza JPA en la consola inferior!
+                    </p>
+                </div>
+                <button onclick="resetDatabase()" class="self-start md:self-auto px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-rotate-left text-amber-400"></i>
+                    <span>Restaurar Datos Originales de bd_personas.db</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <!-- Java Swing Window Replica -->
+                <div class="lg:col-span-8 bg-slate-200 text-slate-900 rounded-xl overflow-hidden swing-window border-2 border-slate-400">
+                    <!-- Swing Title Bar -->
+                    <div class="bg-gradient-to-r from-slate-300 via-slate-200 to-slate-300 px-4 py-2 border-b border-slate-400 flex items-center justify-between select-none">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-brands fa-java text-blue-700 text-base"></i>
+                            <span class="text-xs font-bold text-slate-800">Gestión de Personas - MVC + JPA (EclipseLink) + SQLite</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="w-3 h-3 rounded-full bg-amber-400 border border-amber-600 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-emerald-400 border border-emerald-600 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-rose-500 border border-rose-700 inline-block"></span>
+                        </div>
+                    </div>
+
+                    <!-- Swing Body -->
+                    <div class="p-4 space-y-4 bg-[#eeeeee]">
+                        <!-- TitledBorder: Datos de la Persona -->
+                        <fieldset class="border border-slate-400 rounded p-3.5 bg-[#f5f5f5]">
+                            <legend class="text-xs font-bold text-slate-700 px-2">Datos de la Persona</legend>
+                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center text-xs">
+                                <label class="sm:col-span-4 font-semibold text-slate-700">ID (Autoincremental):</label>
+                                <div class="sm:col-span-8">
+                                    <input id="sim-id" type="text" readonly placeholder="Generado por SQLite AUTOINCREMENT" class="w-full px-2.5 py-1.5 bg-slate-200 border border-slate-400 rounded text-slate-600 font-mono cursor-not-allowed focus:outline-none">
+                                </div>
+
+                                <label class="sm:col-span-4 font-semibold text-slate-700">Nombres Completos:</label>
+                                <div class="sm:col-span-8">
+                                    <input id="sim-nombres" type="text" placeholder="Ej. Chapeta Gamboa Sindy Nathalia" class="w-full px-2.5 py-1.5 bg-white border border-slate-400 rounded text-slate-900 focus:border-blue-600 focus:outline-none">
+                                </div>
+
+                                <label class="sm:col-span-4 font-semibold text-slate-700">Correo Electrónico:</label>
+                                <div class="sm:col-span-8">
+                                    <input id="sim-correo" type="email" placeholder="Ej. Chapeta@Floresta.edu.co" class="w-full px-2.5 py-1.5 bg-white border border-slate-400 rounded text-slate-900 focus:border-blue-600 focus:outline-none">
+                                </div>
+
+                                <label class="sm:col-span-4 font-semibold text-slate-700">Teléfono:</label>
+                                <div class="sm:col-span-8">
+                                    <input id="sim-telefono" type="text" placeholder="Ej. 3125373846" class="w-full px-2.5 py-1.5 bg-white border border-slate-400 rounded text-slate-900 focus:border-blue-600 focus:outline-none">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <!-- FlowLayout: Botones CRUD -->
+                        <div class="flex flex-wrap items-center justify-center gap-3 py-1">
+                            <button onclick="simGuardar()" class="px-4 py-1.5 bg-gradient-to-b from-white to-slate-200 hover:from-blue-50 hover:to-blue-100 active:bg-slate-300 text-slate-800 font-semibold text-xs border border-slate-400 rounded shadow-sm flex items-center space-x-1.5">
+                                <i class="fa-solid fa-floppy-disk text-blue-700"></i>
+                                <span>Guardar (Crear)</span>
+                            </button>
+                            <button onclick="simActualizar()" class="px-4 py-1.5 bg-gradient-to-b from-white to-slate-200 hover:from-amber-50 hover:to-amber-100 active:bg-slate-300 text-slate-800 font-semibold text-xs border border-slate-400 rounded shadow-sm flex items-center space-x-1.5">
+                                <i class="fa-solid fa-pen-to-square text-amber-700"></i>
+                                <span>Actualizar</span>
+                            </button>
+                            <button onclick="simEliminar()" class="px-4 py-1.5 bg-gradient-to-b from-white to-slate-200 hover:from-rose-50 hover:to-rose-100 active:bg-slate-300 text-slate-800 font-semibold text-xs border border-slate-400 rounded shadow-sm flex items-center space-x-1.5">
+                                <i class="fa-solid fa-trash-can text-rose-700"></i>
+                                <span>Eliminar</span>
+                            </button>
+                            <button onclick="simLimpiar()" class="px-4 py-1.5 bg-gradient-to-b from-white to-slate-200 hover:from-slate-100 hover:to-slate-200 active:bg-slate-300 text-slate-800 font-semibold text-xs border border-slate-400 rounded shadow-sm flex items-center space-x-1.5">
+                                <i class="fa-solid fa-broom text-slate-600"></i>
+                                <span>Limpiar / Nuevo</span>
+                            </button>
+                        </div>
+
+                        <!-- TitledBorder: JTable Listado de Personas -->
+                        <fieldset class="border border-slate-400 rounded p-2.5 bg-[#f5f5f5]">
+                            <legend class="text-xs font-bold text-slate-700 px-2 flex items-center justify-between">
+                                <span>Listado de Personas (bd_personas.db) — Haz clic en una fila para seleccionarla</span>
+                            </legend>
+                            <div class="mb-2 flex items-center justify-between gap-2 px-1">
+                                <span id="sim-count-badge" class="text-[11px] font-mono text-slate-600">Total registros: 45</span>
+                                <input id="sim-search" oninput="renderSimTable()" type="text" placeholder="Filtrar en vivo por nombre o correo..." class="px-2.5 py-1 text-xs bg-white border border-slate-400 rounded text-slate-800 w-64 focus:outline-none focus:border-blue-600">
+                            </div>
+                            <div class="bg-white border border-slate-400 max-h-64 overflow-y-auto">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead class="bg-slate-200 sticky top-0 border-b border-slate-400 text-slate-800 select-none">
+                                        <tr>
+                                            <th class="py-1.5 px-2.5 border-r border-slate-300 w-14">ID</th>
+                                            <th class="py-1.5 px-2.5 border-r border-slate-300">Nombres</th>
+                                            <th class="py-1.5 px-2.5 border-r border-slate-300">Correo</th>
+                                            <th class="py-1.5 px-2.5">Teléfono</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sim-table-body" class="divide-y divide-slate-200 font-sans text-slate-800">
+                                        <!-- Populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+
+                <!-- Right Column: NetBeans Output / EclipseLink Log Console -->
+                <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col h-full">
+                    <div class="px-4 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-terminal text-emerald-400 text-sm"></i>
+                            <span class="text-xs font-bold font-mono text-white">NetBeans Output • EclipseLink Log</span>
+                        </div>
+                        <button onclick="clearConsole()" class="text-[11px] text-slate-400 hover:text-white">Limpiar log</button>
+                    </div>
+                    <div id="jpa-console" class="p-4 font-mono text-xs space-y-2.5 overflow-y-auto max-h-[450px] text-slate-300 bg-slate-950/90">
+                        <!-- Logs injected dynamically -->
+                    </div>
+                    <div class="p-3.5 bg-slate-900 border-t border-slate-800 text-[11px] text-slate-400 leading-relaxed">
+                        <strong class="text-sky-400">Nota Docente:</strong> Cada acción en la ventana Swing pasa por <code class="font-mono text-slate-200">ControladorPersona</code>, el cual invoca los métodos transaccionales de <code class="font-mono text-slate-200">PersonaJpaController</code>.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 5: Rúbrica y Retos Pedagógicos -->
+    <section class="py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-sky-400">5. Evaluación en Laboratorio</span>
+                <h2 class="text-2xl font-bold text-white mt-1">Rúbrica de Evaluación y Retos para los Estudiantes</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                    <div class="text-sky-400 font-bold text-lg">25%</div>
+                    <div class="font-bold text-white text-sm mt-1">Configuración JPA + SQLite</div>
+                    <p class="text-xs text-slate-400 mt-1">Vinculación correcta de <code class="font-mono">sqlite-jdbc.jar</code>, ruta relativa en <code class="font-mono">persistence.xml</code> y estrategia <code class="font-mono">IDENTITY</code> en <code class="font-mono">Persona.java</code>.</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                    <div class="text-amber-400 font-bold text-lg">25%</div>
+                    <div class="font-bold text-white text-sm mt-1">Uso de Categoría Persistence</div>
+                    <p class="text-xs text-slate-400 mt-1">Generación con los asistentes de NetBeans de la Entidad y del <code class="font-mono">PersonaJpaController</code> con su constructor por defecto.</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                    <div class="text-emerald-400 font-bold text-lg">30%</div>
+                    <div class="font-bold text-white text-sm mt-1">Separación Estricta MVC</div>
+                    <p class="text-xs text-slate-400 mt-1">La vista <code class="font-mono">FrmPersona</code> no importa ni instancia clases de <code class="font-mono">persistencia</code>; todo evento es manejado en <code class="font-mono">ControladorPersona</code>.</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                    <div class="text-purple-400 font-bold text-lg">20%</div>
+                    <div class="font-bold text-white text-sm mt-1">Operaciones CRUD Completas</div>
+                    <p class="text-xs text-slate-400 mt-1">Lectura inicial de los 45 registros de <code class="font-mono">bd_personas.db</code>, inserción, edición y borrado sin excepciones.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="border-t border-slate-800 py-8 text-center text-xs text-slate-500">
+        <p>Guía Docente de Programación Orientada a Objetos • Arquitectura MVC con Java Swing, JPA (EclipseLink) y SQLite en Apache NetBeans (Java with Ant)</p>
+    </footer>
+
+    <script>
+        // Complete repository of files needed in the NetBeans Ant project
+        const projectFiles = {
+            'persistence.xml': {
+                path: 'src/META-INF/persistence.xml',
+                origin: 'Generado por NetBeans (Asistente Entity Classes from Database) y ajustado a ruta relativa',
+                explanation: 'Es el archivo corazón de JPA. Define la Unidad de Persistencia ("GestionPersonasMVCPU"), especifica a EclipseLink como el motor ORM, registra la clase entidad modelo.Persona y configura las propiedades JDBC para conectarse al archivo bd_personas.db ubicado en la raíz del proyecto.',
+                code: `<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.1" 
+             xmlns="http://xmlns.jcp.org/xml/ns/persistence" 
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
+             
+  <persistence-unit name="GestionPersonasMVCPU" transaction-type="RESOURCE_LOCAL">
+    <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+    <class>modelo.Persona</class>
+    <properties>
+      <!-- Ruta relativa hacia la raíz del proyecto Java with Ant -->
+      <property name="javax.persistence.jdbc.url" value="jdbc:sqlite:bd_personas.db"/>
+      <property name="javax.persistence.jdbc.user" value=""/>
+      <property name="javax.persistence.jdbc.driver" value="org.sqlite.JDBC"/>
+      <property name="javax.persistence.jdbc.password" value=""/>
+    </properties>
+  </persistence-unit>
+</persistence>`
+            },
+            'Persona.java': {
+                path: 'src/modelo/Persona.java',
+                origin: 'Categoría Persistence > Entity Classes from Database',
+                explanation: 'Representa el Modelo de Datos (Mapeo Objeto-Relacional). Cada instancia de la clase Persona equivale a una fila en la tabla Persona de SQLite. Es indispensable incluir @GeneratedValue(strategy = GenerationType.IDENTITY) sobre el atributo id para que EclipseLink delegue la generación del consecutivo al AUTOINCREMENT de SQLite.',
+                code: `package modelo;
+
+import java.io.Serializable;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "Persona")
+@NamedQueries({
+    @NamedQuery(name = "Persona.findAll", query = "SELECT p FROM Persona p"),
+    @NamedQuery(name = "Persona.findById", query = "SELECT p FROM Persona p WHERE p.id = :id"),
+    @NamedQuery(name = "Persona.findByNombres", query = "SELECT p FROM Persona p WHERE p.nombres = :nombres"),
+    @NamedQuery(name = "Persona.findByCorreo", query = "SELECT p FROM Persona p WHERE p.correo = :correo"),
+    @NamedQuery(name = "Persona.findByTelefono", query = "SELECT p FROM Persona p WHERE p.telefono = :telefono")
+})
+public class Persona implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Clave para AUTOINCREMENT en SQLite
+    @Basic(optional = false)
+    @Column(name = "id")
+    private Integer id;
+
+    @Column(name = "nombres")
+    private String nombres;
+
+    @Column(name = "correo")
+    private String correo;
+
+    @Column(name = "telefono")
+    private String telefono;
+
+    public Persona() {
+    }
+
+    public Persona(Integer id) {
+        this.id = id;
+    }
+
+    public Persona(Integer id, String nombres, String correo, String telefono) {
+        this.id = id;
+        this.nombres = nombres;
+        this.correo = correo;
+        this.telefono = telefono;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getNombres() {
+        return nombres;
+    }
+
+    public void setNombres(String nombres) {
+        this.nombres = nombres;
+    }
+
+    public String getCorreo() {
+        return correo;
+    }
+
+    public void setCorreo(String correo) {
+        this.correo = correo;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 0;
+        hash += (id != null ? id.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof Persona)) {
+            return false;
+        }
+        Persona other = (Persona) object;
+        return !((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id)));
+    }
+
+    @Override
+    public String toString() {
+        return "modelo.Persona[ id=" + id + ", nombres=" + nombres + " ]";
+    }
+}`
+            },
+            'PersonaJpaController.java': {
+                path: 'src/persistencia/PersonaJpaController.java',
+                origin: 'Categoría Persistence > JPA Controller Classes from Entity Classes',
+                explanation: 'Encapsula toda la lógica de comunicación con EclipseLink mediante el EntityManager. Contiene los métodos transaccionales create(), edit(), destroy() y findPersonaEntities(). Se le agrega un constructor sin parámetros que instancia la fábrica con la unidad "GestionPersonasMVCPU".',
+                code: `package persistencia;
+
+import java.io.Serializable;
+import java.util.List;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Query;
+import javax.persistence.EntityNotFoundException;
+import javax.persistence.Persistence;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+import modelo.Persona;
+import persistencia.exceptions.NonexistentEntityException;
+
+public class PersonaJpaController implements Serializable {
+
+    private EntityManagerFactory emf = null;
+
+    // Constructor con EntityManagerFactory generado por NetBeans
+    public PersonaJpaController(EntityManagerFactory emf) {
+        this.emf = emf;
+    }
+
+    // Constructor por defecto agregado para instanciar la Unidad de Persistencia fácilmente
+    public PersonaJpaController() {
+        this.emf = Persistence.createEntityManagerFactory("GestionPersonasMVCPU");
+    }
+
+    public EntityManager getEntityManager() {
+        return emf.createEntityManager();
+    }
+
+    // CREATE: Inserta un nuevo registro en la tabla Persona
+    public void create(Persona persona) {
+        EntityManager em = null;
+        try {
+            em = getEntityManager();
+            em.getTransaction().begin();
+            em.persist(persona);
+            em.getTransaction().commit();
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+    }
+
+    // UPDATE: Actualiza un registro existente usando merge()
+    public void edit(Persona persona) throws NonexistentEntityException, Exception {
+        EntityManager em = null;
+        try {
+            em = getEntityManager();
+            em.getTransaction().begin();
+            persona = em.merge(persona);
+            em.getTransaction().commit();
+        } catch (Exception ex) {
+            String msg = ex.getLocalizedMessage();
+            if (msg == null || msg.length() == 0) {
+                Integer id = persona.getId();
+                if (findPersona(id) == null) {
+                    throw new NonexistentEntityException("La persona con id " + id + " ya no existe.");
+                }
+            }
+            throw ex;
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+    }
+
+    // DELETE: Elimina una fila por su clave primaria (id)
+    public void destroy(Integer id) throws NonexistentEntityException {
+        EntityManager em = null;
+        try {
+            em = getEntityManager();
+            em.getTransaction().begin();
+            Persona persona;
+            try {
+                persona = em.getReference(Persona.class, id);
+                persona.getId();
+            } catch (EntityNotFoundException enfe) {
+                throw new NonexistentEntityException("La persona con id " + id + " ya no existe.", enfe);
+            }
+            em.remove(persona);
+            em.getTransaction().commit();
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
+    }
+
+    // READ ALL: Obtiene todos los registros de bd_personas.db
+    public List<Persona> findPersonaEntities() {
+        return findPersonaEntities(true, -1, -1);
+    }
+
+    public List<Persona> findPersonaEntities(int maxResults, int firstResult) {
+        return findPersonaEntities(false, maxResults, firstResult);
+    }
+
+    private List<Persona> findPersonaEntities(boolean all, int maxResults, int firstResult) {
+        EntityManager em = getEntityManager();
+        try {
+            CriteriaQuery cq = em.getCriteriaBuilder().createQuery();
+            cq.select(cq.from(Persona.class));
+            Query q = em.createQuery(cq);
+            if (!all) {
+                q.setMaxResults(maxResults);
+                q.setFirstResult(firstResult);
+            }
+            return q.getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    // READ ONE: Busca una Persona puntual por ID
+    public Persona findPersona(Integer id) {
+        EntityManager em = getEntityManager();
+        try {
+            return em.find(Persona.class, id);
+        } finally {
+            em.close();
+        }
+    }
+
+    public int getPersonaCount() {
+        EntityManager em = getEntityManager();
+        try {
+            CriteriaQuery cq = em.getCriteriaBuilder().createQuery();
+            Root<Persona> rt = cq.from(Persona.class);
+            cq.select(em.getCriteriaBuilder().count(rt));
+            Query q = em.createQuery(cq);
+            return ((Long) q.getSingleResult()).intValue();
+        } finally {
+            em.close();
+        }
+    }
+}`
+            },
+            'NonexistentEntityException.java': {
+                path: 'src/persistencia/exceptions/NonexistentEntityException.java',
+                origin: 'Generado automáticamente por NetBeans junto con PersonaJpaController',
+                explanation: 'Clase de excepción personalizada que lanza el controlador JPA cuando se intenta editar o eliminar un ID que ya fue borrado de la base de datos SQLite.',
+                code: `package persistencia.exceptions;
+
+public class NonexistentEntityException extends Exception {
+    public NonexistentEntityException(String message, Throwable cause) {
+        super(message, cause);
+    }
+    public NonexistentEntityException(String message) {
+        super(message);
+    }
+}`
+            },
+            'FrmPersona.java': {
+                path: 'src/vista/FrmPersona.java',
+                origin: 'Creado en el paquete vista (Interfaz Gráfica Swing)',
+                explanation: 'Implementa la Capa Vista del patrón MVC utilizando componentes Swing (JFrame, JPanel, JTextField, JButton y JTable). No contiene ninguna sentencia de base de datos; únicamente construye la ventana y expone sus componentes para que ControladorPersona escuche los eventos.',
+                code: `package vista;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+public class FrmPersona extends JFrame {
+
+    // Campos de texto expuestos para el Controlador MVC
+    public JTextField txtId = new JTextField(10);
+    public JTextField txtNombres = new JTextField(25);
+    public JTextField txtCorreo = new JTextField(25);
+    public JTextField txtTelefono = new JTextField(15);
+
+    // Botones de acción CRUD
+    public JButton btnGuardar = new JButton("Guardar (Crear)");
+    public JButton btnActualizar = new JButton("Actualizar");
+    public JButton btnEliminar = new JButton("Eliminar");
+    public JButton btnLimpiar = new JButton("Limpiar / Nuevo");
+
+    // Tabla para mostrar los registros de bd_personas.db
+    public JTable tablaPersonas = new JTable();
+    public DefaultTableModel modeloTabla;
+
+    public FrmPersona() {
+        setTitle("Gestión de Personas - MVC + JPA (EclipseLink) + SQLite");
+        setSize(780, 520);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout(10, 10));
+
+        // 1. Panel Superior: Formulario de captura de datos
+        JPanel panelFormulario = new JPanel(new GridLayout(4, 2, 8, 8));
+        panelFormulario.setBorder(BorderFactory.createTitledBorder("Datos de la Persona"));
+
+        txtId.setEditable(false); // Bloqueado porque SQLite lo calcula con AUTOINCREMENT
+        panelFormulario.add(new JLabel("ID (Autoincremental):"));
+        panelFormulario.add(txtId);
+
+        panelFormulario.add(new JLabel("Nombres Completos:"));
+        panelFormulario.add(txtNombres);
+
+        panelFormulario.add(new JLabel("Correo Electrónico:"));
+        panelFormulario.add(txtCorreo);
+
+        panelFormulario.add(new JLabel("Teléfono:"));
+        panelFormulario.add(txtTelefono);
+
+        // 2. Panel Intermedio: Botonera CRUD
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        panelBotones.add(btnGuardar);
+        panelBotones.add(btnActualizar);
+        panelBotones.add(btnEliminar);
+        panelBotones.add(btnLimpiar);
+
+        JPanel panelNorte = new JPanel(new BorderLayout());
+        panelNorte.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
+        panelNorte.add(panelFormulario, BorderLayout.CENTER);
+        panelNorte.add(panelBotones, BorderLayout.SOUTH);
+
+        // 3. Panel Central: JTable con modelo de solo lectura en celdas
+        String[] columnas = {"ID", "Nombres", "Correo", "Teléfono"};
+        modeloTabla = new DefaultTableModel(null, columnas) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        tablaPersonas.setModel(modeloTabla);
+        JScrollPane scrollTabla = new JScrollPane(tablaPersonas);
+        scrollTabla.setBorder(BorderFactory.createTitledBorder("Listado de Personas (bd_personas.db)"));
+
+        add(panelNorte, BorderLayout.NORTH);
+        add(scrollTabla, BorderLayout.CENTER);
+    }
+}`
+            },
+            'ControladorPersona.java': {
+                path: 'src/controlador/ControladorPersona.java',
+                origin: 'Creado en el paquete controlador (Lógica de coordinación MVC)',
+                explanation: 'Es el puente entre la Vista (FrmPersona) y la Persistencia (PersonaJpaController). Escucha los eventos de los botones mediante ActionListener y la selección de filas en la tabla mediante MouseAdapter, valida que los campos no estén vacíos y actualiza el JTable después de cada transacción.',
+                code: `package controlador;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.List;
+import javax.swing.JOptionPane;
+import modelo.Persona;
+import persistencia.PersonaJpaController;
+import persistencia.exceptions.NonexistentEntityException;
+import vista.FrmPersona;
+
+public class ControladorPersona implements ActionListener {
+
+    private final FrmPersona vista;
+    private final PersonaJpaController jpaController;
+
+    public ControladorPersona(FrmPersona vista, PersonaJpaController jpaController) {
+        this.vista = vista;
+        this.jpaController = jpaController;
+
+        // Suscribir los botones de la vista a este controlador
+        this.vista.btnGuardar.addActionListener(this);
+        this.vista.btnActualizar.addActionListener(this);
+        this.vista.btnEliminar.addActionListener(this);
+        this.vista.btnLimpiar.addActionListener(this);
+
+        // Detectar clic sobre una fila del JTable para pasar los datos a las cajas de texto
+        this.vista.tablaPersonas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                seleccionarFila();
+            }
+        });
+
+        // Cargar los registros iniciales de bd_personas.db al arrancar
+        listarPersonas();
+    }
+
+    public void iniciar() {
+        vista.setVisible(true);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == vista.btnGuardar) {
+            guardarPersona();
+        } else if (e.getSource() == vista.btnActualizar) {
+            actualizarPersona();
+        } else if (e.getSource() == vista.btnEliminar) {
+            eliminarPersona();
+        } else if (e.getSource() == vista.btnLimpiar) {
+            limpiarFormulario();
+        }
+    }
+
+    private void listarPersonas() {
+        vista.modeloTabla.setRowCount(0);
+        List<Persona> lista = jpaController.findPersonaEntities();
+        for (Persona p : lista) {
+            Object[] fila = {
+                p.getId(),
+                p.getNombres(),
+                p.getCorreo(),
+                p.getTelefono()
+            };
+            vista.modeloTabla.addRow(fila);
+        }
+    }
+
+    private void guardarPersona() {
+        if (validarCampos()) {
+            try {
+                Persona nueva = new Persona();
+                nueva.setNombres(vista.txtNombres.getText().trim());
+                nueva.setCorreo(vista.txtCorreo.getText().trim());
+                nueva.setTelefono(vista.txtTelefono.getText().trim());
+
+                jpaController.create(nueva);
+                JOptionPane.showMessageDialog(vista, "Persona registrada exitosamente con ID: " + nueva.getId());
+                listarPersonas();
+                limpiarFormulario();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(vista, "Error al guardar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void actualizarPersona() {
+        if (vista.txtId.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(vista, "Seleccione primero un registro de la tabla para actualizar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (validarCampos()) {
+            try {
+                Persona p = new Persona();
+                p.setId(Integer.valueOf(vista.txtId.getText()));
+                p.setNombres(vista.txtNombres.getText().trim());
+                p.setCorreo(vista.txtCorreo.getText().trim());
+                p.setTelefono(vista.txtTelefono.getText().trim());
+
+                jpaController.edit(p);
+                JOptionPane.showMessageDialog(vista, "Registro actualizado correctamente.");
+                listarPersonas();
+                limpiarFormulario();
+            } catch (NonexistentEntityException ex) {
+                JOptionPane.showMessageDialog(vista, "La persona con ese ID ya no existe en la BD.", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(vista, "Error al actualizar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void eliminarPersona() {
+        if (vista.txtId.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(vista, "Seleccione un registro de la tabla para eliminar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int confirmacion = JOptionPane.showConfirmDialog(vista,
+                "¿Está seguro de eliminar a " + vista.txtNombres.getText() + "?",
+                "Confirmar Eliminación", JOptionPane.YES_NO_OPTION);
+
+        if (confirmacion == JOptionPane.YES_OPTION) {
+            try {
+                Integer id = Integer.valueOf(vista.txtId.getText());
+                jpaController.destroy(id);
+                JOptionPane.showMessageDialog(vista, "Registro eliminado correctamente.");
+                listarPersonas();
+                limpiarFormulario();
+            } catch (NonexistentEntityException ex) {
+                JOptionPane.showMessageDialog(vista, "El registro no existe.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void seleccionarFila() {
+        int fila = vista.tablaPersonas.getSelectedRow();
+        if (fila >= 0) {
+            vista.txtId.setText(vista.tablaPersonas.getValueAt(fila, 0).toString());
+            vista.txtNombres.setText(vista.tablaPersonas.getValueAt(fila, 1).toString());
+            vista.txtCorreo.setText(vista.tablaPersonas.getValueAt(fila, 2).toString());
+            vista.txtTelefono.setText(vista.tablaPersonas.getValueAt(fila, 3).toString());
+        }
+    }
+
+    private void limpiarFormulario() {
+        vista.txtId.setText("");
+        vista.txtNombres.setText("");
+        vista.txtCorreo.setText("");
+        vista.txtTelefono.setText("");
+        vista.tablaPersonas.clearSelection();
+    }
+
+    private boolean validarCampos() {
+        if (vista.txtNombres.getText().trim().isEmpty()
+                || vista.txtCorreo.getText().trim().isEmpty()
+                || vista.txtTelefono.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(vista, "Todos los campos (Nombres, Correo, Teléfono) son obligatorios.", "Validación", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+}`
+            },
+            'Main.java': {
+                path: 'src/principal/Main.java',
+                origin: 'Creado en el paquete principal (Clase ejecutable del proyecto)',
+                explanation: 'Punto de arranque de la aplicación. Configura el aspecto visual del sistema operativo e instancia FrmPersona, PersonaJpaController y ControladorPersona dentro del hilo seguro de eventos de Swing (SwingUtilities.invokeLater).',
+                code: `package principal;
+
+import controlador.ControladorPersona;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import persistencia.PersonaJpaController;
+import vista.FrmPersona;
+
+public class Main {
+
+    public static void main(String[] args) {
+        // Aplicar el estilo visual nativo del sistema operativo
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            System.err.println("No se pudo aplicar el LookAndFeel: " + e.getMessage());
+        }
+
+        // Iniciar la aplicación dentro del Event Dispatch Thread (EDT) de Swing
+        SwingUtilities.invokeLater(() -> {
+            FrmPersona vista = new FrmPersona();
+            PersonaJpaController jpaController = new PersonaJpaController();
+            ControladorPersona controlador = new ControladorPersona(vista, jpaController);
+            controlador.iniciar();
+        });
+    }
+}`
+            }
+        };
+
+        let currentFileKey = 'Persona.java';
+
+        function selectFile(fileKey) {
+            currentFileKey = fileKey;
+            const fileData = projectFiles[fileKey];
+
+            // Update tree button styles
+            document.querySelectorAll('.file-btn').forEach(btn => {
+                btn.classList.remove('bg-sky-500/20', 'text-white', 'border', 'border-sky-500/40', 'font-bold');
+                btn.classList.add('text-slate-300', 'hover:bg-slate-800/70');
+            });
+            const activeBtn = document.getElementById('btn-file-' + fileKey);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-300', 'hover:bg-slate-800/70');
+                activeBtn.classList.add('bg-sky-500/20', 'text-white', 'border', 'border-sky-500/40', 'font-bold');
+            }
+
+            // Update header & content
+            document.getElementById('active-file-badge').textContent = fileData.path;
+            document.getElementById('active-file-origin').textContent = fileData.origin;
+            document.getElementById('active-file-explanation').textContent = fileData.explanation;
+            document.getElementById('active-file-code').textContent = fileData.code;
+        }
+
+        function copyCurrentFile() {
+            const code = projectFiles[currentFileKey].code;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = code;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+            showToast(`Archivo ${currentFileKey} copiado al portapapeles`, 'success');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+            toastMsg.textContent = message;
+
+            const box = toast.firstElementChild;
+            if (type === 'warning') {
+                box.className = 'bg-amber-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-amber-400/30';
+                toastIcon.className = 'fa-solid fa-triangle-exclamation text-xl';
+            } else {
+                box.className = 'bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-emerald-400/30';
+                toastIcon.className = 'fa-solid fa-circle-check text-xl';
+            }
+
+            toast.classList.remove('hidden', 'translate-y-2', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 2600);
+        }
+
+        const initialDatabaseRecords = [
+            { id: 1, nombres: "Chapeta Gamboa Sindy Nathalia", correo: "Chapeta@Floresta.edu.co", telefono: "3125373846" },
+            { id: 2, nombres: "Corchuelo Segura Gaston Eduardo", correo: "Corchuelo@Floresta.edu.co", telefono: "3116155784" },
+            { id: 3, nombres: "Davila Brayan", correo: "Davila@Floresta.edu.co", telefono: "3144305166" },
+            { id: 4, nombres: "Duque Jamaica Camilo Andres", correo: "Duque@Floresta.edu.co", telefono: "3127619866" },
+            { id: 5, nombres: "Duran Cubillos Ronald Alexander", correo: "Duran@Floresta.edu.co", telefono: "3195526994" },
+            { id: 6, nombres: "Fonseca Barrera Heinner Mateo", correo: "Fonseca@Floresta.edu.co", telefono: "3136295023" },
+            { id: 7, nombres: "Garcia Bernal Ana Gabriela", correo: "GarciaB@Floresta.edu.co", telefono: "3171032989" },
+            { id: 8, nombres: "Garcia Gomez Nicklass", correo: "GarciaG@Floresta.edu.co", telefono: "3104130875" },
+            { id: 9, nombres: "Garzon Ramirez Gloria Elena", correo: "GarzonRa@Floresta.edu.co", telefono: "3162273566" },
+            { id: 10, nombres: "Garzon Rodriguez David Santiago", correo: "GarzonRo@Floresta.edu.co", telefono: "3209078381" },
+            { id: 11, nombres: "Gomez Barrera German Dario", correo: "GomezB@Floresta.edu.co", telefono: "3102755149" },
+            { id: 12, nombres: "Gomez Guevara Andres Felipe", correo: "GomezG@Floresta.edu.co", telefono: "3118357493" },
+            { id: 13, nombres: "Gomez Hernandez Juan Esteban", correo: "GomezH@Floresta.edu.co", telefono: "3188578942" },
+            { id: 14, nombres: "Gomez Torres Walter Alfredo", correo: "GomezT@Floresta.edu.co", telefono: "3181405673" },
+            { id: 15, nombres: "Guerrero Lopez Marco Aurelio", correo: "GuerreroL@Floresta.edu.co", telefono: "3105491739" },
+            { id: 16, nombres: "Hernandez Sarmiento Francis Elena", correo: "Hernandez@Floresta.edu.co", telefono: "3190892444" },
+            { id: 17, nombres: "Lemus Martinez Jhyna Paola", correo: "Lemus@Floresta.edu.co", telefono: "3175324630" },
+            { id: 18, nombres: "Leon Guerra Luz Angela", correo: "Leon@Floresta.edu.co", telefono: "3138559362" },
+            { id: 19, nombres: "Leyton Burgos Franklin", correo: "Leyton@Floresta.edu.co", telefono: "3110118963" },
+            { id: 20, nombres: "Mancera Nidia Briyith", correo: "Mancera@Floresta.edu.co", telefono: "3172440036" },
+            { id: 21, nombres: "Manrique Moreno Juan Sebastian", correo: "Manrique@Floresta.edu.co", telefono: "3107565274" },
+            { id: 22, nombres: "MARTINEZ DUARTE JOSEPH DUVAN", correo: "MartinezD@Floresta.edu.co", telefono: "3176208177" },
+            { id: 23, nombres: "Martinez Perez Juan Diego", correo: "MartinezP@Floresta.edu.co", telefono: "3146841664" },
+            { id: 24, nombres: "Mejia Guerrero Diego Alejandro", correo: "Majia@Floresta.edu.co", telefono: "3131166664" },
+            { id: 25, nombres: "Meneses Roldan Alejandro", correo: "Meneses@Floresta.edu.co", telefono: "3141064790" },
+            { id: 26, nombres: "Montealegre Toro Samuel", correo: "Montealegre@Floresta.edu.co", telefono: "3144310459" },
+            { id: 27, nombres: "Montes Fonseca Yeyffer Arbey", correo: "Montes@Floresta.edu.co", telefono: "3144239140" },
+            { id: 28, nombres: "Mora Acevedo Adriana Esperanza", correo: "Mora@Floresta.edu.co", telefono: "3194856511" },
+            { id: 29, nombres: "Morales Rozo John Ivonne Soraya", correo: "Morales@Floresta.edu.co", telefono: "3101894455" },
+            { id: 30, nombres: "Moreno Cardenas", correo: "Moreno@Floresta.edu.co", telefono: "3142589392" },
+            { id: 31, nombres: "Munoz Carvajalino Cristian Camilo", correo: "Munoz@Floresta.edu.co", telefono: "3131071665" },
+            { id: 32, nombres: "Munoz Lasprilla Homrai", correo: "MunozL@Floresta.edu.co", telefono: "3168005449" },
+            { id: 33, nombres: "Nivia Bohorquez Alfredo", correo: "Nivia@Floresta.edu.co", telefono: "3155551270" },
+            { id: 34, nombres: "Nunez David Nelson Enrique", correo: "Nunez@Floresta.edu.co", telefono: "3125476092" },
+            { id: 35, nombres: "Ortega Diaz", correo: "Ortega@Floresta.edu.co", telefono: "3124679868" },
+            { id: 36, nombres: "Ortiz Furnieles Jhon Jairo", correo: "Ortiz@Floresta.edu.co", telefono: "3172838974" },
+            { id: 37, nombres: "Osorio Rodriguez Juan Camilo", correo: "Osorio@Floresta.edu.co", telefono: "3111795626" },
+            { id: 38, nombres: "Paloma Quila Mateo", correo: "Paloma@Floresta.edu.co", telefono: "3126143847" },
+            { id: 39, nombres: "Parra Avila Daniel Orlando", correo: "Parra@Floresta.edu.co", telefono: "3131332927" },
+            { id: 40, nombres: "Perez Son Brayan Camilo", correo: "Perez@Floresta.edu.co", telefono: "3116716043" },
+            { id: 41, nombres: "Pinzon Franco Ivonne Astrid", correo: "Pinzon@Floresta.edu.co", telefono: "3143097307" },
+            { id: 42, nombres: "Restrepo Sastoque Gustavo Antonio", correo: "Restrepo@Floresta.edu.co", telefono: "3197320190" },
+            { id: 43, nombres: "Pedro Alonso", correo: "palonso@gmail.com", telefono: "312459999" },
+            { id: 44, nombres: "Jorge Orlando Cifuentes", correo: "jcifuentes@gmail.com", telefono: "3214567999" },
+            { id: 47, nombres: "Luis Fernado Perez Perez", correo: "lperez@hotmail.com", telefono: "3124511111" }
+        ];
+
+        let personasDB = [];
+        let autoIncrementSeq = 47;
+        let selectedRowId = null;
+
+        function logJPA(action, detail, color = 'text-emerald-400') {
+            const consoleEl = document.getElementById('jpa-console');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'border-l-2 border-slate-700 pl-2.5 py-0.5';
+            entry.innerHTML = `<span class="text-slate-500">[${time}]</span> <span class="${color} font-bold">${action}</span><br><span class="text-slate-300">${detail}</span>`;
+            consoleEl.prepend(entry);
+        }
+
+        function clearConsole() {
+            document.getElementById('jpa-console').innerHTML = '';
+            logJPA('[EL Info]:', 'Consola limpiada. Conexión activa con jdbc:sqlite:bd_personas.db', 'text-sky-400');
+        }
+
+        function resetDatabase() {
+            personasDB = JSON.parse(JSON.stringify(initialDatabaseRecords));
+            autoIncrementSeq = 47;
+            simLimpiar();
+            renderSimTable();
+            logJPA('[EL Info]:', 'Persistence.createEntityManagerFactory("GestionPersonasMVCPU") -> findPersonaEntities() cargó 45 registros desde bd_personas.db', 'text-sky-400');
+            showToast('Datos originales de bd_personas.db restaurados', 'success');
+        }
+
+        function renderSimTable() {
+            const tbody = document.getElementById('sim-table-body');
+            const filter = document.getElementById('sim-search').value.trim().toLowerCase();
+            tbody.innerHTML = '';
+
+            const filtered = personasDB.filter(p =>
+                p.nombres.toLowerCase().includes(filter) ||
+                p.correo.toLowerCase().includes(filter) ||
+                String(p.id).includes(filter)
+            );
+
+            document.getElementById('sim-count-badge').textContent = `Mostrando ${filtered.length} de ${personasDB.length} registros`;
+
+            filtered.forEach(p => {
+                const tr = document.createElement('tr');
+                const isSelected = p.id === selectedRowId;
+                tr.className = `cursor-pointer transition ${isSelected ? 'bg-blue-600 text-white font-medium' : 'hover:bg-blue-50'}`;
+                tr.onclick = () => seleccionarFilaSim(p);
+                tr.innerHTML = `
+                    <td class="py-1.5 px-2.5 border-r border-slate-200 font-mono">${p.id}</td>
+                    <td class="py-1.5 px-2.5 border-r border-slate-200">${p.nombres}</td>
+                    <td class="py-1.5 px-2.5 border-r border-slate-200">${p.correo}</td>
+                    <td class="py-1.5 px-2.5 font-mono">${p.telefono}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function seleccionarFilaSim(persona) {
+            selectedRowId = persona.id;
+            document.getElementById('sim-id').value = persona.id;
+            document.getElementById('sim-nombres').value = persona.nombres;
+            document.getElementById('sim-correo').value = persona.correo;
+            document.getElementById('sim-telefono').value = persona.telefono;
+            renderSimTable();
+            logJPA('[MouseAdapter]:', `Fila seleccionada -> Persona[id=${persona.id}, nombres="${persona.nombres}"]`, 'text-amber-400');
+        }
+
+        function simLimpiar() {
+            selectedRowId = null;
+            document.getElementById('sim-id').value = '';
+            document.getElementById('sim-nombres').value = '';
+            document.getElementById('sim-correo').value = '';
+            document.getElementById('sim-telefono').value = '';
+            renderSimTable();
+        }
+
+        function validarCamposSim() {
+            const nombres = document.getElementById('sim-nombres').value.trim();
+            const correo = document.getElementById('sim-correo').value.trim();
+            const telefono = document.getElementById('sim-telefono').value.trim();
+            if (!nombres || !correo || !telefono) {
+                showToast('JOptionPane: Todos los campos (Nombres, Correo, Teléfono) son obligatorios.', 'warning');
+                logJPA('[Validación MVC]:', 'Campos incompletos. Operación cancelada antes de llamar a JPA.', 'text-rose-400');
+                return null;
+            }
+            return { nombres, correo, telefono };
+        }
+
+        function simGuardar() {
+            const datos = validarCamposSim();
+            if (!datos) return;
+
+            autoIncrementSeq += 1;
+            const nuevaPersona = {
+                id: autoIncrementSeq,
+                nombres: datos.nombres,
+                correo: datos.correo,
+                telefono: datos.telefono
+            };
+            personasDB.push(nuevaPersona);
+            renderSimTable();
+            simLimpiar();
+            showToast(`JOptionPane: Persona registrada exitosamente con ID: ${nuevaPersona.id}`, 'success');
+            logJPA('[jpaController.create]:', `INSERT INTO Persona (nombres, correo, telefono) VALUES ('${nuevaPersona.nombres}', '${nuevaPersona.correo}', '${nuevaPersona.telefono}') -> ID asignado: ${nuevaPersona.id}`, 'text-emerald-400');
+        }
+
+        function simActualizar() {
+            const idVal = document.getElementById('sim-id').value;
+            if (!idVal) {
+                showToast('JOptionPane: Seleccione primero un registro de la tabla para actualizar.', 'warning');
+                return;
+            }
+            const datos = validarCamposSim();
+            if (!datos) return;
+
+            const idx = personasDB.findIndex(p => p.id === Number(idVal));
+            if (idx !== -1) {
+                personasDB[idx].nombres = datos.nombres;
+                personasDB[idx].correo = datos.correo;
+                personasDB[idx].telefono = datos.telefono;
+                renderSimTable();
+                simLimpiar();
+                showToast('JOptionPane: Registro actualizado correctamente.', 'success');
+                logJPA('[jpaController.edit]:', `em.merge(persona) -> UPDATE Persona SET nombres='${datos.nombres}', correo='${datos.correo}', telefono='${datos.telefono}' WHERE id=${idVal}`, 'text-amber-400');
+            }
+        }
+
+        function simEliminar() {
+            const idVal = document.getElementById('sim-id').value;
+            const nombresVal = document.getElementById('sim-nombres').value;
+            if (!idVal) {
+                showToast('JOptionPane: Seleccione un registro de la tabla para eliminar.', 'warning');
+                return;
+            }
+
+            // Open custom JOptionPane modal
+            const modal = document.getElementById('confirm-modal');
+            document.getElementById('confirm-modal-text').textContent = `¿Está seguro de eliminar a ${nombresVal} (ID: ${idVal})?`;
+            modal.classList.remove('hidden');
+
+            document.getElementById('confirm-yes-btn').onclick = () => {
+                personasDB = personasDB.filter(p => p.id !== Number(idVal));
+                closeConfirmModal();
+                renderSimTable();
+                simLimpiar();
+                showToast('JOptionPane: Registro eliminado correctamente.', 'success');
+                logJPA('[jpaController.destroy]:', `em.remove(persona) -> DELETE FROM Persona WHERE id=${idVal}`, 'text-rose-400');
+            };
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        window.onload = function () {
+            selectFile('Persona.java');
+            resetDatabase();
+        };
+    </script>
+</body>
+</html>
